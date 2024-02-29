@@ -1,0 +1,41 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+metadata:
+  name: home-assistant
+namespace: home-assistant
+resources:
+  - https://raw.githubusercontent.com/lanbat/home-assistant-k8s/main/base/deployment.yml
+  - https://raw.githubusercontent.com/lanbat/home-assistant-k8s/main/base/ingress.yml
+  - https://raw.githubusercontent.com/lanbat/home-assistant-k8s/main/base/kustomization.yaml
+  - https://raw.githubusercontent.com/lanbat/home-assistant-k8s/main/base/persistent-volume-claim.yml
+  - https://raw.githubusercontent.com/lanbat/home-assistant-k8s/main/base/service.yml
+
+configMapGenerator:
+- name: home-assistant-config
+  behavior: replace
+  literals:
+  - TZ="Europe/London"
+
+patchesJson6902:
+- target:
+    version: v1
+    kind: Ingress
+    name: home-assistant
+  patch: |-
+    - op: replace
+      path: /spec/ingressClassName
+      value: nginx
+    - op: replace
+      path: /spec/tls/0/hosts/0
+      value: ha.hldn.vg.cd
+    - op: replace
+      path: /spec/tls/0/secretName
+      value: ha.hldn.vg.cd-production-secret
+    - op: replace
+      path: /spec/rules/0/host
+      value: ha.hldn.vg.cd
+
+images:
+- name: ghcr.io/home-assistant/home-assistant
+  newTag: 2024.2.5
+
